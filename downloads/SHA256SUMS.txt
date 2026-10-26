@@ -1,1 +1,1 @@
-bc9369f1ca00c553669c8fd9617b77dbe3d9b121fa95878eb75cffa99b5775f4  MacSizeExplorer-1.1.0-macOS-Intel.zip
+0bbd79be52b5ac556b9ca4acf021d96dc82f55ac8a3f85e19e0dbc2d5fe48ca1  MacSizeExplorer-1.2.0-macOS-Intel.dmg

@@ -12,12 +12,25 @@ cat > 'MacSizeExplorer.app/Contents/Info.plist' <<'PLIST'
 <key>CFBundleName</key><string>MacSizeExplorer</string>
 <key>CFBundleDisplayName</key><string>MacSizeExplorer</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>1.1.0</string>
+<key>CFBundleShortVersionString</key><string>1.2.0</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>NSHighResolutionCapable</key><true/>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string></array>
+<key>AppLanguage</key><string>en</string>
 </dict></plist>
 PLIST
 cp LICENSE 'MacSizeExplorer.app/Contents/Resources/LICENSE'
 cp THIRD_PARTY_NOTICES.md 'MacSizeExplorer.app/Contents/Resources/THIRD_PARTY_NOTICES.md'
 codesign --force --sign - 'MacSizeExplorer.app'
-echo 'Hazır: MacSizeExplorer.app'
+# The same tested executable serves both languages; each bundle declares its UI language.
+mkdir -p 'MacSizeExplorer Türkçe.app'
+ditto 'MacSizeExplorer.app' 'MacSizeExplorer Türkçe.app'
+/usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier io.github.erhansenlik.macsizeexplorer.tr' 'MacSizeExplorer Türkçe.app/Contents/Info.plist'
+/usr/libexec/PlistBuddy -c 'Set :CFBundleDisplayName MacSizeExplorer Türkçe' 'MacSizeExplorer Türkçe.app/Contents/Info.plist'
+/usr/libexec/PlistBuddy -c 'Set :CFBundleName MacSizeExplorer Türkçe' 'MacSizeExplorer Türkçe.app/Contents/Info.plist'
+/usr/libexec/PlistBuddy -c 'Set :CFBundleDevelopmentRegion tr' 'MacSizeExplorer Türkçe.app/Contents/Info.plist'
+/usr/libexec/PlistBuddy -c 'Set :CFBundleLocalizations:0 tr' 'MacSizeExplorer Türkçe.app/Contents/Info.plist'
+/usr/libexec/PlistBuddy -c 'Set :AppLanguage tr' 'MacSizeExplorer Türkçe.app/Contents/Info.plist'
+codesign --force --sign - 'MacSizeExplorer Türkçe.app'
+echo 'Ready: MacSizeExplorer.app (English) + MacSizeExplorer Türkçe.app'

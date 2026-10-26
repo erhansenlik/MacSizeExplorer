@@ -2,6 +2,11 @@ import Cocoa
 import UniformTypeIdentifiers
 import Darwin
 
+enum Language {
+    static let english = (Bundle.main.object(forInfoDictionaryKey: "AppLanguage") as? String ?? "en") != "tr"
+}
+func L(_ turkish: String, _ english: String) -> String { Language.english ? english : turkish }
+
 func sizeText(_ n: Int64) -> String { ByteCountFormatter.string(fromByteCount: n, countStyle: .file) }
 
 final class Entry {
@@ -165,7 +170,7 @@ final class MapView: NSView {
     var onSelect: ((Entry) -> Void)?
     var onOpen: ((Entry) -> Void)?
     var onMagnify: ((CGFloat) -> Void)?
-    var emptyMessage = "Bir klasör seçerek alan haritasını oluşturun."
+    var emptyMessage = L("Bir klasör seçerek alan haritasını oluşturun.", "Choose a folder to create its disk map.")
     private(set) var boxes: [MapTile] = []
     override var isFlipped: Bool { true }
     override func draw(_ dirtyRect: NSRect) {
@@ -190,7 +195,7 @@ final class MapView: NSView {
             }
             guard r.width > 65 && r.height > 31 else { continue }
             let style = NSMutableParagraphStyle(); style.lineBreakMode = .byTruncatingMiddle
-            let name = tile.entry.map { ($0.folder ? "▸ " : "") + $0.name } ?? "Diğer öğeler"
+            let name = tile.entry.map { ($0.folder ? "▸ " : "") + $0.name } ?? L("Diğer öğeler", "Other items")
             (name as NSString).draw(in: NSRect(x: r.minX + 10, y: r.minY + 10, width: r.width - 20, height: 19), withAttributes: [.font: NSFont.systemFont(ofSize: 13, weight: .semibold), .foregroundColor: NSColor.white, .paragraphStyle: style])
             if r.height > 58 {
                 let sub = sizeText(Int64(tile.bytes)) + (r.width > 160 ? String(format: "  ·  %.1f%%", tile.bytes / total * 100) : "")
@@ -204,15 +209,15 @@ final class MapView: NSView {
     }
     override func magnify(with event: NSEvent) { onMagnify?(event.magnification) }
     @objc func view(_ view: NSView, stringForToolTip tag: NSView.ToolTipTag, point: NSPoint, userData data: UnsafeMutableRawPointer?) -> String {
-        guard let e = boxes.first(where: { $0.rect.contains(point) })?.entry else { return "Diğer öğeleri klasör ağacında inceleyebilirsiniz." }
-        return "\(e.url.path)\nDiskte: \(sizeText(e.allocated)) · Mantıksal: \(sizeText(e.logical))\(e.folder ? "\nÇift tıklayarak klasöre girin." : "")"
+        guard let e = boxes.first(where: { $0.rect.contains(point) })?.entry else { return L("Diğer öğeleri klasör ağacında inceleyebilirsiniz.", "Browse the remaining items in the folder tree.") }
+        return "\(e.url.path)\n\(L("Diskte", "On disk")): \(sizeText(e.allocated)) · \(L("Mantıksal", "Logical")): \(sizeText(e.logical))\(e.folder ? L("\nÇift tıklayarak klasöre girin.", "\nDouble-click to explore this folder.") : "")"
     }
 }
 final class MapPanel: NSView {
     let map = MapView()
     let scroll = NSScrollView()
-    let title = label("Alan haritası", 16, .semibold)
-    let subtitle = label("Kutuların alanı dosya ve klasör boyutunu gösterir.", 11, secondary: true)
+    let title = label(L("Alan haritası", "Disk map"), 16, .semibold)
+    let subtitle = label(L("Kutuların alanı dosya ve klasör boyutunu gösterir.", "Tile area represents file and folder size."), 11, secondary: true)
     let percent = label("100%", 11, .medium, secondary: true)
     let legend = row([], spacing: 14)
     private var resizeObserver: NSObjectProtocol?
@@ -220,13 +225,13 @@ final class MapPanel: NSView {
     var onEnlarge: (() -> Void)?
     lazy var minus = button("", "minus.magnifyingglass", target: self, action: #selector(zoomOut))
     lazy var plus = button("", "plus.magnifyingglass", target: self, action: #selector(zoomIn))
-    lazy var fit = button("Sığdır", "arrow.down.right.and.arrow.up.left", target: self, action: #selector(resetZoom))
-    lazy var enlarge = button("Büyüt", "arrow.up.left.and.arrow.down.right", target: self, action: #selector(openLarge))
+    lazy var fit = button(L("Sığdır", "Fit"), "arrow.down.right.and.arrow.up.left", target: self, action: #selector(resetZoom))
+    lazy var enlarge = button(L("Büyüt", "Expand"), "arrow.up.left.and.arrow.down.right", target: self, action: #selector(openLarge))
     init(standalone: Bool = false) {
         super.init(frame: .zero)
-        minus.toolTip = "Uzaklaştır (⌘−)"; minus.setAccessibilityLabel("Uzaklaştır")
-        plus.toolTip = "Yakınlaştır (⌘+)"; plus.setAccessibilityLabel("Yakınlaştır")
-        fit.toolTip = "Haritayı pencereye sığdır (⌘0)"; enlarge.toolTip = "Haritayı ayrı büyük pencerede aç"
+        minus.toolTip = L("Uzaklaştır (⌘−)", "Zoom out (⌘−)"); minus.setAccessibilityLabel(L("Uzaklaştır", "Zoom out"))
+        plus.toolTip = L("Yakınlaştır (⌘+)", "Zoom in (⌘+)"); plus.setAccessibilityLabel(L("Yakınlaştır", "Zoom in"))
+        fit.toolTip = L("Haritayı pencereye sığdır (⌘0)", "Fit map to window (⌘0)"); enlarge.toolTip = L("Haritayı ayrı büyük pencerede aç", "Open map in a larger window")
         percent.widthAnchor.constraint(equalToConstant: 42).isActive = true
         let controls = row(standalone ? [minus, percent, plus, fit] : [minus, percent, plus, fit, enlarge], spacing: 5)
         let headings = column([title, subtitle], spacing: 4)
@@ -237,12 +242,12 @@ final class MapPanel: NSView {
         scroll.contentView.postsFrameChangedNotifications = true
         resizeObserver = NotificationCenter.default.addObserver(forName: NSView.frameDidChangeNotification, object: scroll.contentView, queue: .main) { [weak self] _ in self?.resizeCanvas() }
         map.onMagnify = { [weak self] delta in guard let self = self else { return }; self.setZoom(self.zoom * (1 + delta)) }
-        let hint = label("Çift tık: klasöre gir  ·  Yakınlaştırınca kaydırarak gezin", 11, secondary: true)
+        let hint = label(L("Çift tık: klasöre gir  ·  Yakınlaştırınca kaydırarak gezin", "Double-click a folder to explore  ·  Scroll to pan when zoomed in"), 11, secondary: true)
         let stack = column([header, scroll, legend, hint], spacing: 12); pin(stack, to: self, inset: 16)
         for v in [header, scroll, legend, hint] { v.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
         scroll.heightAnchor.constraint(greaterThanOrEqualToConstant: 180).isActive = true
         legend.heightAnchor.constraint(equalToConstant: 20).isActive = true
-        map.setAccessibilityLabel("Dosya ve klasörlerin alan haritası. Öğelere klavyeyle erişmek için klasör ağacını kullanın.")
+        map.setAccessibilityLabel(L("Dosya ve klasörlerin alan haritası. Öğelere klavyeyle erişmek için klasör ağacını kullanın.", "Disk map of files and folders. Use the folder tree for keyboard access."))
         updateControls()
     }
     required init?(coder: NSCoder) { fatalError() }
@@ -269,11 +274,11 @@ final class MapPanel: NSView {
     @objc func openLarge() { onEnlarge?() }
     func show(_ entry: Entry?, logical: Bool, reset: Bool) {
         map.entries = entry?.children ?? []; map.logical = logical
-        title.stringValue = entry?.name ?? "Alan haritası"
+        title.stringValue = entry?.name ?? L("Alan haritası", "Disk map")
         title.toolTip = entry?.url.path
         let count = entry?.children.count ?? 0
-        subtitle.stringValue = entry == nil ? "Bir klasör seçerek başlayın." : "\(count.formatted()) öğe · \(logical ? "Mantıksal boyut" : "Diskte kapladığı alan")"
-        map.emptyMessage = entry == nil ? "Bir klasör seçerek alan haritasını oluşturun." : "Bu klasörde gösterilecek alan yok."
+        subtitle.stringValue = entry == nil ? L("Bir klasör seçerek başlayın.", "Choose a folder to get started.") : "\(count.formatted()) \(L("öğe", "items")) · \(logical ? L("Mantıksal boyut", "Logical size") : L("Diskte kapladığı alan", "Size on disk"))"
+        map.emptyMessage = entry == nil ? L("Bir klasör seçerek alan haritasını oluşturun.", "Choose a folder to create its disk map.") : L("Bu klasörde gösterilecek alan yok.", "No disk usage to display in this folder.")
         legend.arrangedSubviews.forEach { legend.removeArrangedSubview($0); $0.removeFromSuperview() }
         for e in (entry?.children ?? []).filter({ (logical ? $0.logical : $0.allocated) > 0 }).prefix(3) {
             let dot = NSView(); dot.wantsLayer = true; dot.layer?.cornerRadius = 3; dot.layer?.backgroundColor = colorFor(e).cgColor
@@ -291,22 +296,22 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
     var window: NSWindow!
     let outline = NSOutlineView()
     let panel = MapPanel()
-    let path = label("Alan kullanımını keşfedin", 12, secondary: true)
-    let status = label("Başlamak için bir klasör seçin.", 11, secondary: true)
-    let detail = label("Bir öğe seçerek ayrıntılarını görün.", 12)
-    let selectionTitle = label("SEÇİLİ ÖĞE", 10, .semibold, secondary: true)
-    let allocatedCard = StatCard("DİSKTE KAPLADIĞI", "internaldrive", .systemBlue)
-    let logicalCard = StatCard("MANTIKSAL BOYUT", "doc", .systemTeal)
-    let filesCard = StatCard("DOSYA SAYISI", "square.stack.3d.up", .systemPurple)
+    let path = label(L("Alan kullanımını keşfedin", "Explore disk usage"), 12, secondary: true)
+    let status = label(L("Başlamak için bir klasör seçin.", "Choose a folder to get started."), 11, secondary: true)
+    let detail = label(L("Bir öğe seçerek ayrıntılarını görün.", "Select an item to view its details."), 12)
+    let selectionTitle = label(L("SEÇİLİ ÖĞE", "SELECTED ITEM"), 10, .semibold, secondary: true)
+    let allocatedCard = StatCard(L("DİSKTE KAPLADIĞI", "SIZE ON DISK"), "internaldrive", .systemBlue)
+    let logicalCard = StatCard(L("MANTIKSAL BOYUT", "LOGICAL SIZE"), "doc", .systemTeal)
+    let filesCard = StatCard(L("DOSYA SAYISI", "FILES"), "square.stack.3d.up", .systemPurple)
     let meter = NSProgressIndicator()
-    let mode = NSSegmentedControl(labels: ["Diskte kapladığı", "Mantıksal boyut"], trackingMode: .selectOne, target: nil, action: nil)
-    lazy var choose = button("Klasör seç…", "folder.badge.plus", target: self, action: #selector(pick))
-    lazy var cancel = button("Durdur", "stop.circle", target: self, action: #selector(stop))
+    let mode = NSSegmentedControl(labels: [L("Diskte kapladığı", "Size on disk"), L("Mantıksal boyut", "Logical size")], trackingMode: .selectOne, target: nil, action: nil)
+    lazy var choose = button(L("Klasör seç…", "Choose folder…"), "folder.badge.plus", target: self, action: #selector(pick))
+    lazy var cancel = button(L("Durdur", "Stop"), "stop.circle", target: self, action: #selector(stop))
     lazy var refresh = button("", "arrow.clockwise", target: self, action: #selector(rescan))
     lazy var up = button("", "arrow.up", target: self, action: #selector(goUp))
     lazy var home = button("", "house", target: self, action: #selector(goRoot))
-    lazy var reveal = button("Finder’da göster", "arrow.up.forward.square", target: self, action: #selector(showFinder))
-    lazy var export = button("CSV aktar…", "square.and.arrow.up", target: self, action: #selector(saveCSV))
+    lazy var reveal = button(L("Finder’da göster", "Show in Finder"), "arrow.up.forward.square", target: self, action: #selector(showFinder))
+    lazy var export = button(L("CSV aktar…", "Export CSV…"), "square.and.arrow.up", target: self, action: #selector(saveCSV))
     var root: Entry?, current: Entry?, selected: Entry?, scanner: Scanner?
     var lastURL: URL?
     var chartWindow: NSWindow?
@@ -325,13 +330,13 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
         window.collectionBehavior = [.fullScreenPrimary]; window.center(); window.isReleasedWhenClosed = false
         let body = BackgroundView(); window.contentView = body
         let title = label("MacSizeExplorer", 25, .bold)
-        let subtitle = label("Diskinizde neyin yer kapladığını görün.", 12, secondary: true)
+        let subtitle = label(L("Diskinizde neyin yer kapladığını görün.", "See what is taking up space on your Mac."), 12, secondary: true)
         let branding = column([title, subtitle], spacing: 4)
         let toolbar = row([branding, spacer(), choose, refresh, cancel, export], spacing: 9)
         choose.bezelColor = .controlAccentColor
-        refresh.setAccessibilityLabel("Yeniden tara"); refresh.toolTip = "Seçili kök klasörü yeniden tara (⌘R)"
-        up.setAccessibilityLabel("Üst klasör"); up.toolTip = "Üst klasöre git (⌘↑)"
-        home.setAccessibilityLabel("Tarama köküne dön"); home.toolTip = "Tarama köküne dön"
+        refresh.setAccessibilityLabel(L("Yeniden tara", "Rescan")); refresh.toolTip = L("Seçili kök klasörü yeniden tara (⌘R)", "Rescan the selected root folder (⌘R)")
+        up.setAccessibilityLabel(L("Üst klasör", "Parent folder")); up.toolTip = L("Üst klasöre git (⌘↑)", "Go to the parent folder (⌘↑)")
+        home.setAccessibilityLabel(L("Tarama köküne dön", "Back to scan root")); home.toolTip = L("Tarama köküne dön", "Back to scan root")
         path.isSelectable = true
         mode.selectedSegment = 0; mode.target = self; mode.action = #selector(changeMode)
         mode.widthAnchor.constraint(equalToConstant: 250).isActive = true
@@ -340,13 +345,13 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
         path.setContentCompressionResistancePriority(.init(100), for: .horizontal)
         let stats = row([allocatedCard, logicalCard, filesCard], spacing: 12); stats.distribution = .fillEqually
         let scroll = NSScrollView(); scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true
-        let name = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name")); name.title = "Klasör / Dosya"; name.width = 220; name.minWidth = 130
-        let size = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("size")); size.title = "Boyut ↓"; size.width = 90; size.minWidth = 75
+        let name = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("name")); name.title = L("Klasör / Dosya", "Folder / File"); name.width = 220; name.minWidth = 130
+        let size = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("size")); size.title = L("Boyut ↓", "Size ↓"); size.width = 90; size.minWidth = 75
         outline.addTableColumn(name); outline.addTableColumn(size); outline.outlineTableColumn = name
         outline.delegate = self; outline.dataSource = self; outline.rowHeight = 32
         outline.style = .sourceList; outline.usesAlternatingRowBackgroundColors = false; outline.columnAutoresizingStyle = .firstColumnOnlyAutoresizingStyle
         outline.target = self; outline.doubleAction = #selector(drillTree); scroll.documentView = outline
-        let treeHeader = row([label("Klasörler", 15, .semibold), spacer(), label("Büyükten küçüğe", 10, secondary: true)])
+        let treeHeader = row([label(L("Klasörler", "Folders"), 15, .semibold), spacer(), label(L("Büyükten küçüğe", "Largest first"), 10, secondary: true)])
         let treeBody = column([treeHeader, scroll], spacing: 12)
         scroll.widthAnchor.constraint(equalTo: treeBody.widthAnchor).isActive = true
         treeHeader.widthAnchor.constraint(equalTo: treeBody.widthAnchor).isActive = true
@@ -365,7 +370,7 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
         detail.widthAnchor.constraint(equalTo: info.widthAnchor).isActive = true
         let selectionRow = row([info, reveal]); pin(selectionRow, to: selectionCard, inset: 12)
         meter.style = .bar; meter.isIndeterminate = true; meter.isHidden = true
-        let note = label("Salt okunur tarama · APFS’de paylaşılan bloklar ve anlık görüntüler nedeniyle boşaltılabilir alan farklı olabilir.", 10, secondary: true)
+        let note = label(L("Salt okunur tarama · APFS’de paylaşılan bloklar ve anlık görüntüler nedeniyle boşaltılabilir alan farklı olabilir.", "Read-only scan · Shared APFS blocks and snapshots can affect how much space can be reclaimed."), 10, secondary: true)
         let stack = column([toolbar, location, stats, split, selectionCard, meter, status, note], spacing: 14)
         pin(stack, to: body, inset: 20)
         for v in [toolbar, location, stats, split, selectionCard, meter, status, note] { v.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true }
@@ -386,10 +391,10 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
             for (name, action, key) in entries { let entry = sub.addItem(withTitle: name, action: action, keyEquivalent: key); entry.target = self }
             item.submenu = sub; menu.addItem(item)
         }
-        let appItem = NSMenuItem(); let appMenu = NSMenu(); appMenu.addItem(withTitle: "MacSizeExplorer’ı kapat", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"); appItem.submenu = appMenu; menu.addItem(appItem)
-        add("Dosya", [("Klasör seç…", #selector(pick), "o"), ("Yeniden tara", #selector(rescan), "r"), ("CSV aktar…", #selector(saveCSV), "s")])
-        let editItem = NSMenuItem(); let edit = NSMenu(title: "Düzen"); edit.addItem(withTitle: "Kopyala", action: #selector(NSText.copy(_:)), keyEquivalent: "c"); edit.addItem(withTitle: "Tümünü seç", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"); editItem.submenu = edit; menu.addItem(editItem)
-        add("Görünüm", [("Yakınlaştır", #selector(zoomIn), "+"), ("Uzaklaştır", #selector(zoomOut), "-"), ("Pencereye sığdır", #selector(fitChart), "0"), ("Haritayı büyük pencerede aç", #selector(openLargeChart), "2"), ("Üst klasör", #selector(goUp), String(UnicodeScalar(NSUpArrowFunctionKey)!)), ("Tam ekran", #selector(fullscreen), "f")])
+        let appItem = NSMenuItem(); let appMenu = NSMenu(); appMenu.addItem(withTitle: L("MacSizeExplorer’ı kapat", "Quit MacSizeExplorer"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"); appItem.submenu = appMenu; menu.addItem(appItem)
+        add(L("Dosya", "File"), [(L("Klasör seç…", "Choose folder…"), #selector(pick), "o"), (L("Yeniden tara", "Rescan"), #selector(rescan), "r"), (L("CSV aktar…", "Export CSV…"), #selector(saveCSV), "s")])
+        let editItem = NSMenuItem(); let edit = NSMenu(title: L("Düzen", "Edit")); edit.addItem(withTitle: L("Kopyala", "Copy"), action: #selector(NSText.copy(_:)), keyEquivalent: "c"); edit.addItem(withTitle: L("Tümünü seç", "Select All"), action: #selector(NSText.selectAll(_:)), keyEquivalent: "a"); editItem.submenu = edit; menu.addItem(editItem)
+        add(L("Görünüm", "View"), [(L("Yakınlaştır", "Zoom in"), #selector(zoomIn), "+"), (L("Uzaklaştır", "Zoom out"), #selector(zoomOut), "-"), (L("Pencereye sığdır", "Fit to window"), #selector(fitChart), "0"), (L("Haritayı büyük pencerede aç", "Open larger map"), #selector(openLargeChart), "2"), (L("Üst klasör", "Parent folder"), #selector(goUp), String(UnicodeScalar(NSUpArrowFunctionKey)!)), (L("Tam ekran", "Full screen"), #selector(fullscreen), "f")])
         NSApp.mainMenu = menu
     }
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
@@ -397,7 +402,7 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
     @objc func pick() {
         guard scanner == nil else { return }
         let p = NSOpenPanel(); p.canChooseDirectories = true; p.canChooseFiles = false; p.allowsMultipleSelection = false
-        p.prompt = "Tara"; p.message = "İncelemek istediğiniz klasörü veya diski seçin."
+        p.prompt = L("Tara", "Scan"); p.message = L("İncelemek istediğiniz klasörü veya diski seçin.", "Choose the folder or disk you want to analyze.")
         p.beginSheetModal(for: window) { [weak self] response in if response == .OK, let url = p.url { self?.start(url) } }
     }
     @objc func rescan() { if let url = lastURL, scanner == nil { start(url) } }
@@ -406,25 +411,25 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
         let job = Scanner(); scanner = job; lastURL = url
         root = nil; current = nil; selected = nil; outline.reloadData(); updateCharts(reset: true)
         path.stringValue = url.path; path.toolTip = url.path
-        allocatedCard.value.stringValue = "Taranıyor…"; logicalCard.value.stringValue = "—"; filesCard.value.stringValue = "—"
-        detail.stringValue = "Dosyalar değiştirilmeden inceleniyor."
+        allocatedCard.value.stringValue = L("Taranıyor…", "Scanning…"); logicalCard.value.stringValue = "—"; filesCard.value.stringValue = "—"
+        detail.stringValue = L("Dosyalar değiştirilmeden inceleniyor.", "Analyzing files without modifying them.")
         meter.isHidden = false; meter.startAnimation(nil); updateButtons()
         DispatchQueue.global(qos: .userInitiated).async {
-            let result = job.scan(url) { count, name in DispatchQueue.main.async { [weak self] in self?.status.stringValue = "\(count.formatted()) öğe · \(name)" } }
+            let result = job.scan(url) { count, name in DispatchQueue.main.async { [weak self] in self?.status.stringValue = "\(count.formatted()) \(L("öğe", "items")) · \(name)" } }
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
                 self.scanner = nil; self.meter.stopAnimation(nil); self.meter.isHidden = true
-                if result.cancelled { self.allocatedCard.value.stringValue = "Durduruldu"; self.status.stringValue = "Yeni bir klasör seçin veya yeniden tarayın."; self.updateButtons(); return }
+                if result.cancelled { self.allocatedCard.value.stringValue = L("Durduruldu", "Stopped"); self.status.stringValue = L("Yeni bir klasör seçin veya yeniden tarayın.", "Choose a new folder or rescan."); self.updateButtons(); return }
                 self.root = result.root; self.sortTree(result.root); self.outline.reloadData(); self.outline.expandItem(result.root)
                 self.navigate(result.root)
-                self.status.stringValue = "Tamamlandı · \(result.errors) erişim/okuma hatası · \(result.skippedVolumes) farklı disk atlandı · \(result.hardlinks) sabit bağlantı tek sayıldı"
+                self.status.stringValue = L("Tamamlandı · \(result.errors) erişim/okuma hatası · \(result.skippedVolumes) farklı disk atlandı · \(result.hardlinks) sabit bağlantı tek sayıldı", "Complete · \(result.errors) access/read errors · \(result.skippedVolumes) other volumes skipped · \(result.hardlinks) hard links counted once")
                 self.status.textColor = result.errors > 0 ? .systemOrange : .secondaryLabelColor
-                if result.errors > 0 { self.status.toolTip = "Bazı içerikler okunamadı; toplam eksik olabilir. Gerekirse Sistem Ayarları → Gizlilik ve Güvenlik → Tam Disk Erişimi’nden izin verip yeniden tarayın." }
+                if result.errors > 0 { self.status.toolTip = L("Bazı içerikler okunamadı; toplam eksik olabilir. Gerekirse Sistem Ayarları → Gizlilik ve Güvenlik → Tam Disk Erişimi’nden izin verip yeniden tarayın.", "Some contents could not be read; totals may be incomplete. If needed, grant access in System Settings → Privacy & Security → Full Disk Access, then rescan.") }
                 self.updateButtons()
             }
         }
     }
-    @objc func stop() { scanner?.cancel(); cancel.isEnabled = false; status.stringValue = "Tarama durduruluyor…" }
+    @objc func stop() { scanner?.cancel(); cancel.isEnabled = false; status.stringValue = L("Tarama durduruluyor…", "Stopping scan…") }
     func updateButtons() {
         let idle = scanner == nil
         choose.isEnabled = idle; refresh.isEnabled = idle && lastURL != nil; cancel.isEnabled = !idle
@@ -434,7 +439,7 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
     }
     func updateCharts(reset: Bool) {
         for p in [panel, largePanel].compactMap({ $0 }) { p.show(current, logical: logical, reset: reset); p.map.selected = selected }
-        chartWindow?.title = "MacSizeExplorer — \(current?.name ?? "Alan haritası")"
+        chartWindow?.title = "MacSizeExplorer — \(current?.name ?? L("Alan haritası", "Disk map"))"
     }
     func navigate(_ e: Entry) {
         guard e.folder else { select(e); return }
@@ -445,8 +450,8 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
     }
     func select(_ e: Entry) {
         selected = e; panel.map.selected = e; largePanel?.map.selected = e
-        selectionTitle.stringValue = e.folder ? "SEÇİLİ KLASÖR" : "SEÇİLİ DOSYA"
-        detail.stringValue = "\(e.name) · Diskte: \(sizeText(e.allocated)) · Mantıksal: \(sizeText(e.logical))"
+        selectionTitle.stringValue = e.folder ? L("SEÇİLİ KLASÖR", "SELECTED FOLDER") : L("SEÇİLİ DOSYA", "SELECTED FILE")
+        detail.stringValue = "\(e.name) · \(L("Diskte", "On disk")): \(sizeText(e.allocated)) · \(L("Mantıksal", "Logical")): \(sizeText(e.logical))"
         detail.toolTip = e.url.path; updateButtons()
     }
     @objc func goUp() { if let p = current?.parent { navigate(p) } }
@@ -469,8 +474,8 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
             w.minSize = NSSize(width: 700, height: 480); w.isReleasedWhenClosed = false; w.collectionBehavior = [.fullScreenPrimary]
             let p = MapPanel(standalone: true); configure(p)
             let container = BackgroundView(); w.contentView = container
-            let back = button("Üst klasör", "arrow.up", target: self, action: #selector(goUp))
-            let help = label("Klasöre çift tıklayın · ⌘0: sığdır · ⌘F: tam ekran", 11, secondary: true)
+            let back = button(L("Üst klasör", "Parent folder"), "arrow.up", target: self, action: #selector(goUp))
+            let help = label(L("Klasöre çift tıklayın · ⌘0: sığdır · ⌘F: tam ekran", "Double-click a folder · ⌘0: fit · ⌘F: full screen"), 11, secondary: true)
             let nav = row([back, spacer(), help]); let stack = column([nav, p], spacing: 6); pin(stack, to: container, inset: 12)
             p.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true; nav.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
             chartWindow = w; largePanel = p; w.center()
@@ -515,17 +520,17 @@ final class App: NSObject, NSApplicationDelegate, NSOutlineViewDataSource, NSOut
         }
     }
     func loadDemo() {
-        let e = Entry(URL(fileURLWithPath: "/Demo/Örnek Disk"), folder: true)
-        for (name, amount) in [("Videolar", 42), ("Projeler", 23), ("Fotoğraflar", 16), ("Uygulamalar", 10), ("Belgeler", 6), ("Arşiv.zip", 3)] {
+        let e = Entry(URL(fileURLWithPath: L("/Demo/Örnek Disk", "/Demo/Sample Disk")), folder: true)
+        for (name, amount) in [(L("Videolar", "Videos"), 42), (L("Projeler", "Projects"), 23), (L("Fotoğraflar", "Photos"), 16), (L("Uygulamalar", "Applications"), 10), (L("Belgeler", "Documents"), 6), (L("Arşiv.zip", "Archive.zip"), 3)] {
             let c = Entry(e.url.appendingPathComponent(name), folder: !name.contains(".")); c.parent = e
             if c.folder {
-                for i in 1...4 { let f = Entry(c.url.appendingPathComponent("Örnek-\(i).dat"), folder: false); f.parent = c; f.allocated = Int64(amount) * 250_000_000; f.logical = f.allocated; f.files = 1; c.children.append(f) }
+                for i in 1...4 { let f = Entry(c.url.appendingPathComponent("\(L("Örnek", "Sample"))-\(i).dat"), folder: false); f.parent = c; f.allocated = Int64(amount) * 250_000_000; f.logical = f.allocated; f.files = 1; c.children.append(f) }
                 c.allocated = c.children.reduce(0) { $0 + $1.allocated }; c.files = 4
             } else { c.allocated = Int64(amount) * 1_000_000_000; c.files = 1 }
             c.logical = c.allocated; e.children.append(c); e.allocated += c.allocated; e.logical += c.logical; e.files += c.files
         }
         root = e; sortTree(e); outline.reloadData(); outline.expandItem(e); navigate(e)
-        status.stringValue = "ÖRNEK VERİ · Bu görünüm gerçek dosyalarınızdan oluşturulmamıştır."
+        status.stringValue = L("ÖRNEK VERİ · Bu görünüm gerçek dosyalarınızdan oluşturulmamıştır.", "SAMPLE DATA · This preview does not contain your real files.")
     }
 }
 
@@ -567,6 +572,13 @@ func renderingTests(_ destination: String) {
         view.cacheDisplay(in: view.bounds, to: bitmap)
         try! bitmap.representation(using: .png, properties: [:])!.write(to: dir.appendingPathComponent(file))
     }
+    precondition(controller.choose.title == (Language.english ? "Choose folder…" : "Klasör seç…"))
+    precondition(controller.panel.fit.title == (Language.english ? "Fit" : "Sığdır"))
+    precondition(controller.panel.enlarge.title == (Language.english ? "Expand" : "Büyüt"))
+    precondition(controller.mode.label(forSegment: 0) == (Language.english ? "Size on disk" : "Diskte kapladığı"))
+    precondition(controller.root!.name == (Language.english ? "Sample Disk" : "Örnek Disk"))
+    precondition(controller.status.stringValue.hasPrefix(Language.english ? "SAMPLE DATA" : "ÖRNEK VERİ"))
+    precondition(NSApp.mainMenu!.items.contains { $0.submenu?.title == (Language.english ? "View" : "Görünüm") })
     let root = controller.root!
     let tiles = treemap(root.children, logical: false, in: NSRect(x: 0, y: 0, width: 1000, height: 600))
     precondition(tiles.count == 6)
@@ -606,7 +618,7 @@ func renderingTests(_ destination: String) {
     capture(controller.window.contentView!, "preview-minimum.png")
     precondition(controller.panel.scroll.contentView.bounds.width > 300)
     controller.chartWindow?.orderOut(nil)
-    print("PASS: proportional tile geometry, aggregate area, 100–400% zoom limits, fit, separate window, synchronized navigation, size-mode synchronization, minimum layout, light/dark rendering")
+    print("PASS: proportional tile geometry, aggregate area, 100–400% zoom limits, fit, separate window, synchronized navigation, size-mode synchronization, minimum layout, light/dark rendering, \(Language.english ? "English" : "Turkish") UI labels")
 }
 if CommandLine.arguments.contains("--self-test") { selfTest() }
 else if let index = CommandLine.arguments.firstIndex(of: "--ui-test"), CommandLine.arguments.count > index + 1 { renderingTests(CommandLine.arguments[index + 1]) }

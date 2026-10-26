@@ -9,13 +9,15 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: Build application
+      - name: Build English and Turkish applications
         run: ./build.command
       - name: Test scanner
         run: ./MacSizeExplorer.app/Contents/MacOS/MacSizeExplorer --self-test
-      - name: Package app
-        run: ditto -c -k --sequesterRsrc --keepParent MacSizeExplorer.app MacSizeExplorer-macOS.zip
+      - name: Package bilingual DMG
+        run: ./package-dmg.command
+      - name: Verify disk image
+        run: hdiutil verify downloads/*.dmg
       - uses: actions/upload-artifact@v4
         with:
-          name: MacSizeExplorer-macOS
-          path: MacSizeExplorer-macOS.zip
+          name: MacSizeExplorer-macOS-DMG
+          path: downloads/*.dmg

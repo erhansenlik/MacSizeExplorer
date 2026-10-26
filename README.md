@@ -1,83 +1,88 @@
 # MacSizeExplorer
 
-macOS için bağımsız, salt okunur bir disk kullanım analiz aracı. Swift ve AppKit ile geliştirilmiştir. macOS 13 ve üzerini destekler; buradaki hazır uygulama Intel işlemci için derlenmiştir. Python, sunucu veya ek paket gerektirmez.
+A native, read-only disk usage analyzer for macOS, built with Swift and AppKit. Explore a folder tree and a proportional, zoomable disk map to find what is taking up space. No Python, web server, or external packages are required.
 
-## İndir
+[ Türkçe kullanım kılavuzu ](README.tr.md)
 
-**[MacSizeExplorer 1.1.0 — macOS Intel uygulaması](https://github.com/erhansenlik/MacSizeExplorer/raw/refs/heads/main/downloads/MacSizeExplorer-1.1.0-macOS-Intel.zip)**
+## Download and install
 
-ZIP dosyasını açın ve içindeki `MacSizeExplorer.app` dosyasını Uygulamalar klasörüne taşıyın. macOS 13 veya üzeri ve Intel işlemci gerekir. Uygulama ad hoc imzalıdır; Apple Developer ID imzası ve noter onayı yoktur. macOS açılışta engellerse Sistem Ayarları → Gizlilik ve Güvenlik bölümündeki uygulamaya özel açma seçeneğini kullanabilirsiniz. Sistem güvenlik özelliklerini genel olarak kapatmanız gerekmez.
+**[Download MacSizeExplorer 1.2.0 — macOS Intel DMG](https://github.com/erhansenlik/MacSizeExplorer/raw/refs/heads/main/downloads/MacSizeExplorer-1.2.0-macOS-Intel.dmg)**
 
-`downloads/SHA256SUMS.txt` dosyasında indirme arşivinin SHA-256 özeti bulunur. Apple Silicon için kaynak kodu o bilgisayarda derleyebilirsiniz; hazır Intel sürümü Apple Silicon üzerinde test edilmemiştir.
+1. Open the DMG.
+2. For English, drag **MacSizeExplorer.app** onto the **Applications** shortcut.
+3. For Turkish, drag **MacSizeExplorer Türkçe.app** onto **Applications**. Both versions can be installed side by side.
+4. Eject the disk image and open the installed app.
 
-## Arayüz
+The downloadable apps require **macOS 13 or later and an Intel Mac**. They are ad hoc signed, not Apple Developer ID signed or notarized. macOS may require approval in **System Settings → Privacy & Security** before opening. You do not need to disable system security protections.
 
-![Örnek verilerle MacSizeExplorer](docs/preview.png)
+The DMG checksum is in [downloads/SHA256SUMS.txt](downloads/SHA256SUMS.txt). Apple Silicon users can build from source on their own Mac; the downloadable Intel build has not been tested on Apple Silicon.
 
-Görseldeki klasörler ve boyutlar örnek verilerdir; kişisel dosya taraması içermez.
+## Interface
 
-## Açma ve kullanma
+![MacSizeExplorer with synthetic sample data](docs/preview.png)
 
-1. **MacSizeExplorer.app** dosyasını çift tıklayarak açın. İsterseniz uygulamayı Uygulamalar klasörüne taşıyabilirsiniz.
-2. **Klasör seç…** ile bir klasör ya da disk seçin. Gizli dosyalar ve uygulama paketlerinin içeriği de taranır.
-3. Soldaki ağaçta klasörleri oklarıyla genişletin. Bir klasörü seçmek o klasörün haritasını gösterir.
-4. Haritada kutuların alanı seçili boyut ölçüsünü temsil eder. Klasöre çift tıklayarak içine girin; **Üst klasör** düğmesiyle geri dönün. Harita bir klasörün doğrudan alt öğelerini gösterir.
-5. **Diskte kapladığı** ile dosya sistemi bloklarını, **Mantıksal boyut** ile dosya içerik boyutunu inceleyin. Liste seçili ölçüye göre büyükten küçüğe sıralanır.
-6. Bir öğeyi seçip **Finder’da göster** düğmesine basın. Uygulama dosya silmez veya taşımaz.
-7. **CSV dışa aktar…** tüm tarama ağacını yol, tür, diskteki bayt, mantıksal bayt ve dosya sayısıyla kaydeder. Klasör satırları alt öğelerin toplamıdır; CSV satırlarını toplarken klasör ve dosyaları birlikte toplamayın.
+This preview uses synthetic data, not a scan of personal files.
 
-Taramadan sonra dosyalar değişirse **Yeniden tara** düğmesiyle (⌘R) güncel tarama başlatın. Durdurulan tarama sonuç olarak sunulmaz.
+## Explore your disk
 
-## Haritayı büyütme
+- Click **Choose folder…** to select a folder or disk. Hidden files and application bundle contents are included.
+- Expand folders in the tree using their disclosure arrows. Selecting a folder shows its immediate children in the map.
+- Switch between **Size on disk** and **Logical size**. The tree is sorted from largest to smallest using the selected measure.
+- Click a map tile to select an item; double-click a folder tile to explore it. Use the parent-folder or home buttons to navigate back.
+- Click **Show in Finder** to reveal the selected item. The app does not delete or move files.
+- Use **Rescan** (⌘R) after files change. Stopping a scan discards the incomplete result.
+- **Export CSV…** saves paths, item types, allocated bytes, logical bytes, and file counts. Folder rows contain descendant totals: do not add folder and file rows together.
 
-- Haritanın üstündeki **+ / −** büyüteç düğmeleriyle %100–%400 arasında yakınlaştırın veya uzaklaştırın. Trackpad ile iki parmakla açma/kısma hareketi de desteklenir.
-- Yakınlaştırılmış haritada yatay ve dikey kaydırma yaparak diğer kutulara ulaşın.
-- **Sığdır** (⌘0) haritayı görünür alana geri sığdırır.
-- **Büyüt** (⌘2) haritayı ayrı, yeniden boyutlandırılabilir bir pencerede açar. Bu pencerede de yakınlaştırma kullanılabilir.
-- **⌘F** veya pencerenin yeşil düğmesiyle tam ekrana geçin. **⌘+** ve **⌘−** etkin pencerenin haritasını büyütür/küçültür.
-- Büyük pencere ve ana pencere aynı klasör ve boyut ölçüsünü gösterir; yakınlaştırma oranları bağımsızdır. Klasör değişiminde yakınlaştırma sıfırlanır.
-- macOS'un açık/koyu görünümü otomatik izlenir; yeniden boyutlandırıldığında harita görünür alana uyum sağlar.
+## Zoom and larger charts
 
-## Sayımlar ve sınırlar
+- Use the magnifying glass **+ / −** buttons to zoom between **100% and 400%**. Trackpad pinch gestures are also supported.
+- Scroll horizontally or vertically to pan around a zoomed map.
+- **Fit** (⌘0) returns to the visible viewport.
+- **Expand** (⌘2) opens a separate, resizable chart window with its own zoom controls.
+- **⌘F** or the green window button switches the active window to full screen. **⌘+** and **⌘−** zoom its chart.
+- Both windows follow the same folder and size measure; zoom levels are independent and reset when navigating to a different folder.
+- Light and dark appearance follow macOS. The chart adapts to window resizing.
 
-- Erişim/okuma hataları altta sayılır; erişilemeyen içerik toplamda bulunmaz. Klasör sayısı dahil gösterilen tarama ilerlemesi, sonuçtaki dosya sayısından farklı olabilir.
-- Gerekirse **Sistem Ayarları → Gizlilik ve Güvenlik → Tam Disk Erişimi** bölümüne uygulamayı ekleyip yeniden açın. Uygulama yönetici yetkisi istemez.
-- Sembolik bağlantılar izlenmez. Tarama başka bir aygıt üzerindeki bağlı diske geçmez; o diski ayrıca seçin.
-- Sabit bağlantılarda aynı aygıt ve inode kimliğine sahip dosya yalnızca ilk karşılaşıldığı yerde boyuta dahil edilir. Diğer bağlantılar sıfır bayt görünür; dosya sayısı bağlantı adlarını da içerir.
-- Diskteki boyut `st_blocks × 512`, mantıksal boyut `st_size` ile ölçülür. Klasörlerin kendi metadata blokları toplama dahil edilmez.
-- APFS klonları, sıkıştırma, anlık görüntüler, temizlenebilir alan ve dosya sistemi metadata bilgileri nedeniyle bu toplam, macOS depolama ekranı veya bir dosyayı sildiğinizde açılacak alanla aynı olmak zorunda değildir. Paylaşılan klon blokları ayrı dosyalarda tekrar sayılabilir.
-- Tarama salt okunurdur, ancak anlık görüntü almaz: tarama sırasında değişen dosyalar sonucu etkileyebilir.
-- Harita en büyük 600 alt öğeyi ayrı kutularda gösterir; kalanlar **Diğer öğeler** olarak birleştirilir. Ağaç ve CSV tüm taranan öğeleri içerir. Renkler klasör adına veya dosya uzantısına göre atanır; renkler toplam dosya türü istatistiği değildir.
-- Çok büyük ağaçlarda tüm sonuç bellekte tutulduğu için bellek kullanımı artar.
-- Uygulama yerel, ad hoc imzalıdır; Apple noter onaylı değildir. Tarama ve CSV dışında ağ bağlantısı kullanmaz.
+## Measurement details and limitations
 
-## Kaynak kod ve yeniden derleme
+- Access and read errors are counted in the status line. Unreadable contents are excluded, so totals may be incomplete. If needed, grant **Full Disk Access** in System Settings, then rescan.
+- Symbolic links, sockets, devices, and other special files are not followed. Scanning does not cross onto another filesystem device; select that disk separately.
+- Files with the same device and inode are counted once. Subsequent hard links show zero bytes but still count as file entries.
+- Allocated size uses `st_blocks × 512`; logical size uses `st_size`. A directory's own metadata blocks are excluded.
+- APFS clones may share blocks that are counted for multiple distinct files. Compression, snapshots, purgeable space, and filesystem metadata can also make totals differ from macOS storage reports or the space reclaimed by deleting an item.
+- A scan is read-only but is not a filesystem snapshot. Concurrent file changes can affect results.
+- The map draws the largest 600 immediate children separately and combines the rest into **Other items**. The tree and CSV retain all scanned entries. Colors are based on folder names or file extensions, not a global file-type summary.
+- All scan results are held in memory; very large trees can use substantial memory.
+- No network requests are made by the application. Scan results are not uploaded.
+- Real file and folder names are preserved in both language versions. Built-in interface text is translated; system formatting follows macOS.
 
-`Source/main.swift` uygulamanın tüm kaynak kodudur. `build.command` dosyasını çalıştırmak hazır uygulamayı yeniden oluşturur. Xcode Command Line Tools gerekir. Aynı kaynak Apple Silicon üzerinde o bilgisayarın mimarisi için derlenebilir.
+## Build from source
 
-Tarayıcı doğrulamasını çalıştırmak için Terminal'de bu klasörde:
+Install Apple's Xcode Command Line Tools, then run:
 
 ```sh
-"MacSizeExplorer.app/Contents/MacOS/MacSizeExplorer" --self-test
+./build.command
+./package-dmg.command
 ```
 
-Test; iç içe dosya toplamlarını, sabit bağlantıların tek sayılmasını, sembolik bağlantı döngüsünün atlanmasını, üst klasör ilişkisini, durdurmayı ve bulunamayan yol hata sayımını denetler.
+The first command builds both language variants from `Source/main.swift`. The same executable is used in both bundles; their `AppLanguage` metadata selects English or Turkish. The second command produces a compressed, read-only DMG containing both apps, an Applications shortcut, installation instructions, the MIT license, and third-party notices.
 
+Builds target the architecture of the build machine. The repository download is the Intel build; a local Apple Silicon build produces an AppleSilicon-labeled DMG.
 
-## Doğrulama ve geliştirme
+## Validation
 
-Derleme: `./build.command`
+```sh
+./MacSizeExplorer.app/Contents/MacOS/MacSizeExplorer --self-test
+./MacSizeExplorer.app/Contents/MacOS/MacSizeExplorer --ui-test /tmp/MacSizeExplorer-en-review
+"./MacSizeExplorer Türkçe.app/Contents/MacOS/MacSizeExplorer" --ui-test /tmp/MacSizeExplorer-tr-review
+```
 
-Tarayıcı testi: `./MacSizeExplorer.app/Contents/MacOS/MacSizeExplorer --self-test`
+Scanner tests cover nested byte totals, hard-link deduplication, symlink cycles, parent relationships, cancellation, and missing-path errors. UI tests use synthetic data to verify map proportions, aggregation, zoom limits, fit, separate-window navigation, size-mode synchronization, minimum window size, light/dark rendering, and language-specific controls and menus. UI tests briefly open application windows and save preview images.
 
-Arayüz/harita testi: `./MacSizeExplorer.app/Contents/MacOS/MacSizeExplorer --ui-test /tmp/MacSizeExplorer-review`
+Use `--demo` to explore the interface with synthetic data without scanning your files.
 
-Son komut yalnızca yapay örnek veriler kullanır; harita alan oranlarını, 600 öğeden sonraki birleştirmeyi, %100–%400 yakınlaştırmayı, sığdırmayı, ayrı pencereyi ve gezinme eşleşmesini doğrular, açık/koyu görünüm önizlemelerini kaydeder. Test sırasında uygulama pencereleri kısa süre açılır. Gerçek bir klasöre erişmeden arayüzü görmek için `--demo` ile başlatın.
+GitHub Actions builds both apps, runs the scanner tests, packages a DMG, and verifies its integrity. CI artifacts target the runner's architecture, which may differ from the Intel download in this repository.
 
-GitHub Actions, kaynak kodunu macOS üzerinde derleyip tarayıcı testini çalıştırır. Actions çıktısı o çalıştırıcının mimarisi içindir; depodaki hazır indirme Intel sürümüdür.
+## License
 
-## Lisans ve kaynaklar
-
-Proje kodu **MIT** lisansı altındadır; [LICENSE](LICENSE) ve [üçüncü taraf bildirimleri](THIRD_PARTY_NOTICES.md) dosyalarını okuyun. Uygulama WinDirStat kodu, logosu veya görsellerini içermez ve WinDirStat ya da Apple ile bağlantılı değildir. Sistem simgeleri ve macOS bileşenleri ilgili Apple koşullarına tabidir.
-
-İçerik incelemesi bir marka/patent araştırması veya hukuki garanti değildir. İnceleme kapsamı üçüncü taraf bildirimlerinde açıklanmıştır.
+Licensed under the **MIT License**. See [LICENSE](LICENSE).
