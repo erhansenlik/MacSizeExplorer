@@ -1,0 +1,21 @@
+name: Build and test
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build application
+        run: ./build.command
+      - name: Test scanner
+        run: ./MacSizeExplorer.app/Contents/MacOS/MacSizeExplorer --self-test
+      - name: Package app
+        run: ditto -c -k --sequesterRsrc --keepParent MacSizeExplorer.app MacSizeExplorer-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MacSizeExplorer-macOS
+          path: MacSizeExplorer-macOS.zip
