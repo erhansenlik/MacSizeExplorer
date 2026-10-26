@@ -16,7 +16,7 @@ jobs:
       - name: Package bilingual DMG
         run: ./package-dmg.command
       - name: Verify disk image
-        run: hdiutil verify downloads/*.dmg
+        run: for image in downloads/*.dmg; do hdiutil verify "$image"; done
       - uses: actions/upload-artifact@v4
         with:
           name: MacSizeExplorer-macOS-DMG
